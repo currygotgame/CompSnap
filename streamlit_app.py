@@ -83,7 +83,7 @@ def get_sold_comps(keyword, count=40, ebay_site="ebay.com"):
     return resp.json().get("items", [])
 
 
-def filter_same_item(image_bytes, mime, comps, item_description, batch_size=8):
+def filter_same_item(image_bytes, mime, comps, item_description, batch_size=25):
     matches = []
 
     for start in range(0, len(comps), batch_size):
@@ -166,13 +166,19 @@ st.caption("Upload a photo of one item — get the exact eBay sold comps for it.
 if not GEMINI_API_KEY or not SOLDCOMPS_API_KEY:
     st.error("Missing API keys. Add GEMINI_API_KEY and SOLDCOMPS_API_KEY in your app's Secrets.")
     st.stop()
+if "uses" not in st.session_state:
+    st.session_state.uses = 0
 
+if st.session_state.uses >= 3:
+    st.warning("Demo limit reached (3 tries). Come back tomorrow!")
+    st.stop()
 uploaded_file = st.file_uploader("Upload a photo", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     st.image(uploaded_file, caption="Your photo", width=300)
 
     if st.button("Find sold comps", type="primary"):
+        st.session_state.uses += 1
         image_bytes = uploaded_file.getvalue()
         mime = uploaded_file.type or "image/jpeg"
 
