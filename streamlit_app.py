@@ -182,37 +182,40 @@ if uploaded_file is not None:
         image_bytes = uploaded_file.getvalue()
         mime = uploaded_file.type or "image/jpeg"
 
-        with st.spinner("Identifying item..."):
-            item_name = identify_item(image_bytes, mime)
-        st.success(f"Identified as: **{item_name}**")
+        try:
+            with st.spinner("Identifying item..."):
+                item_name = identify_item(image_bytes, mime)
+            st.success(f"Identified as: **{item_name}**")
 
-        with st.spinner("Pulling sold comps from eBay..."):
-            comps = get_sold_comps(item_name)
+            with st.spinner("Pulling sold comps from eBay..."):
+                comps = get_sold_comps(item_name)
 
-        if not comps:
-            st.warning("No exact sold match found.")
-            st.stop()
+            if not comps:
+                st.warning("No exact sold match found.")
+                st.stop()
 
-        st.write(f"Got {len(comps)} raw comps — checking which ones are the same item...")
+            st.write(f"Got {len(comps)} raw comps — checking which ones are the same item...")
 
-        with st.spinner("Filtering to same-item matches..."):
-            matches = filter_same_item(image_bytes, mime, comps, item_name)
+            with st.spinner("Filtering to same-item matches..."):
+                matches = filter_same_item(image_bytes, mime, comps, item_name)
 
-        if not matches:
-            st.warning("No exact sold match found.")
-            st.stop()
+            if not matches:
+                st.warning("No exact sold match found.")
+                st.stop()
 
-        stats = compute_stats(matches)
+            stats = compute_stats(matches)
 
-        st.subheader(f"{len(matches)} matching sold listings")
+            st.subheader(f"{len(matches)} matching sold listings")
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Average", f"${stats['average']}")
-        col2.metric("Range", f"${stats['min']} - ${stats['max']}")
-        col3.metric("Buy under", f"${stats['buy_under']}")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Average", f"${stats['average']}")
+            col2.metric("Range", f"${stats['min']} - ${stats['max']}")
+            col3.metric("Buy under", f"${stats['buy_under']}")
 
-        for m in matches:
-            st.markdown(
-                f"**[{m.get('title')}]({m.get('url')})**  \n"
-                f"${m.get('soldPrice')} · sold {m.get('endedAt')}"
-            )
+            for m in matches:
+                st.markdown(
+                    f"**[{m.get('title')}]({m.get('url')})**  \n"
+                    f"${m.get('soldPrice')} · sold {m.get('endedAt')}"
+                )
+        except Exception:
+            st.error("Something went wrong processing that photo. Please try again.")
