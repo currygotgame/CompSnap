@@ -159,9 +159,9 @@ def compute_stats(matches, buy_under_margin=0.30):
 # ==============================================================
 # Streamlit UI
 # ==============================================================
-st.set_page_config(page_title="Estate Sale Comp Finder", page_icon="🏷️")
-st.title("🏷️ Estate Sale Comp Finder")
-st.caption("Upload a photo of one item — get the exact eBay sold comps for it.")
+st.set_page_config(page_title="ReSale Comps Finder", page_icon="🏷️")
+st.title("🏷️ Resale Comps Finder")
+st.caption("Upload a photo of one item — get the exact eBay sold comps for it. So you can make easy profit")
 
 if not GEMINI_API_KEY or not SOLDCOMPS_API_KEY:
     st.error("Missing API keys. Add GEMINI_API_KEY and SOLDCOMPS_API_KEY in your app's Secrets.")
