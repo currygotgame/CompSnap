@@ -13,8 +13,8 @@ from google.genai import types
 # Config — reads keys from Streamlit secrets (set these when you
 # deploy, never commit real keys to GitHub)
 # ==============================================================
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
-SOLDCOMPS_API_KEY = st.secrets.get("SOLDCOMPS_API_KEY", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+SOLDCOMPS_API_KEY = os.environ.get("SOLDCOMPS_API_KEY", "")
 
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 SOLDCOMPS_URL = "https://api.sold-comps.com/v1/scrape"
