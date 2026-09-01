@@ -218,5 +218,4 @@ if uploaded_file is not None:
                     f"${m.get('soldPrice')} · sold {m.get('endedAt')}"
                 )
         except Exception as e:
-            print(f"ERROR: {e}")
-            st.error("Something went wrong processing that photo. Please try again.")
+            print(f"ERROR: {e}", flush=True)
