@@ -16,7 +16,7 @@ from google.genai import types
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 SOLDCOMPS_API_KEY = os.environ.get("SOLDCOMPS_API_KEY", "")
 
-GEMINI_MODEL = "gemini-3.1-flash-lite"
+GEMINI_MODEL = "gemma-4-26b-a4b-it"
 SOLDCOMPS_URL = "https://api.sold-comps.com/v1/scrape"
 
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
