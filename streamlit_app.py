@@ -177,12 +177,6 @@ uploaded_file = st.file_uploader("Upload a photo", type=["jpg", "jpeg", "png"])
 if uploaded_file is not None:
     st.image(uploaded_file, caption="Your photo", width=300)
 
-    condition = st.radio(
-        "What condition is it?",
-        ["Any condition", "Sealed / New", "Open box", "Used"],
-        horizontal=True,
-    )
-
     if st.button("Find sold comps", type="primary"):
         st.session_state.uses += 1
         image_bytes = uploaded_file.getvalue()
@@ -193,20 +187,14 @@ if uploaded_file is not None:
                 item_name = identify_item(image_bytes, mime)
             st.success(f"Identified as: **{item_name}**")
 
-            condition_map = {
-                "Any condition": "",
-                "Sealed / New": "sealed",
-                "Open box": "open box",
-                "Used": "used",
-            }
-            search_query = f"{item_name} {condition_map[condition]}".strip()
-
             with st.spinner("Pulling sold comps from eBay..."):
-                comps = get_sold_comps(search_query)
+                comps = get_sold_comps(item_name)
 
             if not comps:
                 st.warning("No exact sold match found.")
                 st.stop()
+
+            st.write("DEBUG - first comp's fields:", comps[0])
 
             st.write(f"Got {len(comps)} raw comps — checking which ones are the same item...")
 
