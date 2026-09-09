@@ -206,11 +206,11 @@ if uploaded_file is not None:
             stats = compute_stats(matches)
 
             st.subheader(f"{len(matches)} matching sold listings")
-
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns(4)
             col1.metric("Average", f"${stats['average']}")
-            col2.metric("Range", f"${stats['min']} - ${stats['max']}")
-            col3.metric("Buy under", f"${stats['buy_under']}")
+            col2.metric("Low", f"${stats['min']}")
+            col3.metric("High", f"${stats['max']}")
+            col4.metric("Buy under", f"${stats['buy_under']}")
 
             for m in matches:
                 st.markdown(
