@@ -10,8 +10,8 @@ from google import genai
 from google.genai import types
 
 # ==============================================================
-# Config — reads keys from Streamlit secrets (set these when you
-# deploy, never commit real keys to GitHub)
+# Config — reads keys from environment variables (set these in
+# your host's dashboard, never commit real keys to GitHub)
 # ==============================================================
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 SOLDCOMPS_API_KEY = os.environ.get("SOLDCOMPS_API_KEY", "")
@@ -23,7 +23,7 @@ client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
 # ==============================================================
-# Helpers (same logic as the Colab version)
+# Helpers
 # ==============================================================
 def _mime_type(name_or_url):
     mime, _ = mimetypes.guess_type(name_or_url)
@@ -48,23 +48,21 @@ def _call_gemini(contents, retries=3):
         try:
             return client.models.generate_content(model=GEMINI_MODEL, contents=contents)
         except Exception as e:
-            if "429" in str(e) and attempt < retries - 1:
+            if ("429" in str(e) or "503" in str(e)) and attempt < retries - 1:
                 time.sleep(30)
                 continue
             raise
 
 
 # ==============================================================
-# Pipeline functions — take raw image bytes instead of a file path,
-# since Streamlit gives us an uploaded file in memory, not a path
-# on disk like Colab did
+# Pipeline functions
 # ==============================================================
 def identify_item(image_bytes, mime):
     prompt = (
         "You are looking at ONE item that will be sold on eBay. "
         "Identify it as specifically as possible: brand, product line, "
-        "model or style name, material, color, and any other detail that "
-        "would distinguish it from similar items. "
+        "model or style name, and model/style NUMBER if visible. "
+        "Do NOT include condition words like new, used, sealed, or open box. "
         "Respond with ONLY the item name, nothing else — written like a "
         "real eBay search query, under 12 words."
     )
@@ -164,18 +162,26 @@ st.title("🏷️ Resale Comps Finder")
 st.caption("Upload a photo of one item — get the exact eBay sold comps for it. So you can make easy profit")
 
 if not GEMINI_API_KEY or not SOLDCOMPS_API_KEY:
-    st.error("Missing API keys. Add GEMINI_API_KEY and SOLDCOMPS_API_KEY in your app's Secrets.")
+    st.error("Missing API keys. Add GEMINI_API_KEY and SOLDCOMPS_API_KEY as environment variables.")
     st.stop()
+
 if "uses" not in st.session_state:
     st.session_state.uses = 0
 
 if st.session_state.uses >= 3:
     st.warning("Demo limit reached (3 tries). Come back tomorrow!")
     st.stop()
+
 uploaded_file = st.file_uploader("Upload a photo", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     st.image(uploaded_file, caption="Your photo", width=300)
+
+    condition = st.radio(
+        "What condition is it?",
+        ["Any condition", "Sealed / New", "Open box", "Used"],
+        horizontal=True,
+    )
 
     if st.button("Find sold comps", type="primary"):
         st.session_state.uses += 1
@@ -187,8 +193,16 @@ if uploaded_file is not None:
                 item_name = identify_item(image_bytes, mime)
             st.success(f"Identified as: **{item_name}**")
 
+            condition_map = {
+                "Any condition": "",
+                "Sealed / New": "sealed",
+                "Open box": "open box",
+                "Used": "used",
+            }
+            search_query = f"{item_name} {condition_map[condition]}".strip()
+
             with st.spinner("Pulling sold comps from eBay..."):
-                comps = get_sold_comps(item_name)
+                comps = get_sold_comps(search_query)
 
             if not comps:
                 st.warning("No exact sold match found.")
@@ -219,3 +233,4 @@ if uploaded_file is not None:
                 )
         except Exception as e:
             print(f"ERROR: {e}", flush=True)
+            st.error("Something went wrong processing that photo. Please try again.")
