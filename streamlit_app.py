@@ -194,8 +194,6 @@ if uploaded_file is not None:
                 st.warning("No exact sold match found.")
                 st.stop()
 
-            st.write("DEBUG - first comp's fields:", comps[0])
-
             st.write(f"Got {len(comps)} raw comps — checking which ones are the same item...")
 
             with st.spinner("Filtering to same-item matches..."):
@@ -205,20 +203,46 @@ if uploaded_file is not None:
                 st.warning("No exact sold match found.")
                 st.stop()
 
-            stats = compute_stats(matches)
+            # save matches so the condition filter buttons below can use them
+            # without re-running the whole pipeline
+            st.session_state.matches = matches
+            st.session_state.item_name = item_name
 
-            st.subheader(f"{len(matches)} matching sold listings")
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Average", f"${stats['average']}")
-            col2.metric("Low", f"${stats['min']}")
-            col3.metric("High", f"${stats['max']}")
-            col4.metric("Buy under", f"${stats['buy_under']}")
-
-            for m in matches:
-                st.markdown(
-                    f"**[{m.get('title')}]({m.get('url')})**  \n"
-                    f"${m.get('soldPrice')} · sold {m.get('endedAt')}"
-                )
         except Exception as e:
             print(f"ERROR: {e}", flush=True)
             st.error("Something went wrong processing that photo. Please try again.")
+
+# ==============================================================
+# Results + condition filter — shown whenever we have saved matches,
+# so clicking a condition button doesn't require re-running the search
+# ==============================================================
+if "matches" in st.session_state and st.session_state.matches:
+    all_matches = st.session_state.matches
+
+    conditions_present = sorted({m.get("condition", "Unknown") for m in all_matches})
+    options = ["All"] + conditions_present
+
+    chosen = st.radio("Filter by condition", options, horizontal=True)
+
+    if chosen == "All":
+        shown_matches = all_matches
+    else:
+        shown_matches = [m for m in all_matches if m.get("condition") == chosen]
+
+    stats = compute_stats(shown_matches)
+
+    if not stats:
+        st.warning("No matches for that condition.")
+    else:
+        st.subheader(f"{len(shown_matches)} matching sold listings")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Average", f"${stats['average']}")
+        col2.metric("Low", f"${stats['min']}")
+        col3.metric("High", f"${stats['max']}")
+        col4.metric("Buy under", f"${stats['buy_under']}")
+
+        for m in shown_matches:
+            st.markdown(
+                f"**[{m.get('title')}]({m.get('url')})**  \n"
+                f"${m.get('soldPrice')} · {m.get('condition', 'Unknown')} · sold {m.get('endedAt')}"
+            )
