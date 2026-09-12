@@ -3,6 +3,7 @@ import re
 import json
 import time
 import mimetypes
+from datetime import datetime, timezone
 
 import requests
 import streamlit as st
@@ -220,14 +221,29 @@ if "matches" in st.session_state and st.session_state.matches:
     all_matches = st.session_state.matches
 
     conditions_present = sorted({m.get("condition", "Unknown") for m in all_matches})
-    options = ["All"] + conditions_present
+    condition_options = ["All"] + conditions_present
 
-    chosen = st.radio("Filter by condition", options, horizontal=True)
+    chosen_condition = st.radio("Filter by condition", condition_options, horizontal=True)
 
-    if chosen == "All":
+    chosen_days = st.radio("Sold within", ["All time", "Last 30 days", "Last 60 days", "Last 90 days"], horizontal=True)
+
+    if chosen_condition == "All":
         shown_matches = all_matches
     else:
-        shown_matches = [m for m in all_matches if m.get("condition") == chosen]
+        shown_matches = [m for m in all_matches if m.get("condition") == chosen_condition]
+
+    if chosen_days != "All time":
+        days = int(chosen_days.split()[1])
+        cutoff = datetime.now(timezone.utc).timestamp() - (days * 86400)
+        filtered_by_date = []
+        for m in shown_matches:
+            try:
+                sold_date = datetime.strptime(m["endedAt"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                if sold_date.timestamp() >= cutoff:
+                    filtered_by_date.append(m)
+            except (KeyError, ValueError):
+                continue
+        shown_matches = filtered_by_date
 
     stats = compute_stats(shown_matches)
 
